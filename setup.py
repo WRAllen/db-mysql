@@ -10,7 +10,7 @@ setup(
     # 包的名称，pip install db-mysql, 和文件夹的名称要一样，不然安装和使用时会头疼
     name='db-mysql',
     # 每次打包上传到pypi时version的版本必须不一样
-    version='0.0.1',
+    version='0.0.2',
     # 暂时和包名一样
     py_modules=['db-mysql'],
     # 作者信息
