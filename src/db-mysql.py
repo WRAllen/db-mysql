@@ -112,7 +112,8 @@ class SQLOperation:
         return sql
 
     def single_select_sql_with_orderdict(
-            self, select_cols, where_cols, where_values, order_dict, table_name, db_name, limit=None):
+            self, select_cols, where_cols, where_values, where_signs,
+            order_dict, table_name, db_name, limit=None):
         """
         生成单表查询的sql的函数-带多排序的情况
         :params select_cols 需要提取的列数据
@@ -133,13 +134,20 @@ class SQLOperation:
             for index in range(len(where_cols)):
                 col_name = str(where_cols[index])
                 col_value = str(where_values[index])
-                sql += (
-                    col_name + ' = ' + '"' + col_value + '" and '
-                    if index < len(where_cols) - 1 else col_name + ' = ' + '"' + col_value + '" '
-                )
+                if col_value.upper() in ["NULL", "NONE"]:
+                    if where_signs:
+                        sql += col_name + f' {where_signs[index]} ' + 'NULL and '
+                    else:
+                        sql += col_name + ' is NULL and '
+                else:
+                    if where_signs:
+                        sql += col_name + f' {where_signs[index]} ' + '"' + col_value + '" and '
+                    else:
+                        sql += col_name + ' = ' + '"' + col_value + '" and '
+            sql = sql[:-5]
         # 如果存在排序
         if order_dict:
-            sql += f"order by "
+            sql += f" order by "
             for k, v in order_dict.items():
                 sql += f"{k} {str(v).upper()}, "
             sql = sql[:-2]
@@ -148,7 +156,8 @@ class SQLOperation:
             sql += f" limit {int(limit)}"
         return sql
 
-    def single_update_sql(self, update_dict, table_name, db_name, where_cols=[], where_values=[]):
+    def single_update_sql(self, update_dict, table_name, db_name,
+                          where_cols=None, where_values=None, where_signs=None):
         """
         生成单表更新的sql的函数
         :params update_dict 需要跟新的列与对应的值的字典
@@ -160,18 +169,23 @@ class SQLOperation:
         """
         sql = f'update {db_name}.{table_name} set '
         for key in update_dict.keys():
-            if update_dict[key] in ["null", None]:
-                sql += key + ' = null, '
+            if update_dict[key] in ["null", "NULL", None]:
+                sql += key + ' = NULL, '
             else:
                 sql += key + ' = "' + str(update_dict[key]) + '", '
         sql = sql[:-2]
         if where_cols:
             sql += " where "
             for index in range(len(where_cols)):
-                if where_values[index] in ["null", None]:
-                    sql += str(where_cols[index]) + ' is null and '
+                col_name = str(where_cols[index])
+                col_val = str(where_values[index])
+                if col_val.upper() in ["NULL", "NONE"]:
+                    sql += col_name + ' is null and '
                 else:
-                    sql += str(where_cols[index]) + ' = ' + '"' + str(where_values[index]) + '" and '
+                    if where_signs:
+                        sql += col_name + f' {where_signs[index]} ' + '"' + col_val + '" and '
+                    else:
+                        sql += col_name + ' = ' + '"' + col_val + '" and '
             sql = sql[:-5]
         return sql
 
@@ -197,7 +211,7 @@ class SQLOperation:
         sql += before_values_sql + ") values (" + after_values_sql + ")"
         return sql
 
-    def delete_sql(self, table_name, db_name, where_cols=[], where_values=[]):
+    def delete_sql(self, table_name, db_name, where_cols=None, where_values=None, where_signs=None):
         """
         生成单表删除的sql的函数
         :params where_cols 过滤的列
@@ -208,10 +222,15 @@ class SQLOperation:
         """
         sql = f'delete from {db_name}.{table_name} where '
         for index in range(len(where_cols)):
-            if where_values[index] in ["null", None]:
-                sql += str(where_cols[index]) + ' is null and '
+            col_name = str(where_cols[index])
+            col_val = str(where_values[index])
+            if col_val.upper() in ["NULL", "NONE"]:
+                sql += col_name + ' is NULL and '
             else:
-                sql += str(where_cols[index]) + ' = ' + '"' + str(where_values[index]) + '" and '
+                if where_signs:
+                    sql += col_name + f' {where_signs[index]} ' + '"' + col_val + '" and '
+                else:
+                    sql += col_name + ' = ' + '"' + col_val + '" and '
         return sql[:-5]
 
     def delete_sql_with_in(self, table_name, db_name, where_col, where_values=[]):
@@ -236,21 +255,12 @@ class SQLOperation:
 class DB(SQLOperation):
     """
     数据库操作类
-    rpa_db_info = {
-        'host': '192.168.0.191',
-        'user': 'root',
-        'password': '123456',
-        'database': 'rpamakebill',
-        'port': '3306'
-    }
-    db = DB(rpa_db_info)
-    select_cols, select_vals, datas = db.select("test", db.cols("test"))
     """
     def __init__(self, db_info, auto_commit=True):
         super(DB, self).__init__(db_info)
         self.auto_commit = auto_commit
 
-    def select(self, table_name, select_cols, where_cols=None, where_vals=None,
+    def select(self, table_name, select_cols, where_cols=None, where_vals=None, where_signs=None,
                order_dict=None, limit=None, show_sql=False):
         """
         从数据库获取数据
@@ -259,7 +269,7 @@ class DB(SQLOperation):
         return 列，二维值，前者组合成为的字典列表
         """
         spider_sql = self.single_select_sql_with_orderdict(
-            select_cols, where_cols, where_vals, order_dict, table_name, self.db_name, limit)
+            select_cols, where_cols, where_vals, where_signs, order_dict, table_name, self.db_name, limit)
         if show_sql:
             print(f"通过{where_cols}查询的sql：{spider_sql}")
         with self.connection.cursor() as c:
@@ -287,14 +297,14 @@ class DB(SQLOperation):
         print(f"插入表:{table_name} 成功ID:{ID}")
         return ID
 
-    def delete(self, table_name, where_cols=[], where_vals=[], show_sql=False):
+    def delete(self, table_name, where_cols=None, where_vals=None, where_signs=None, show_sql=False):
         """
         删除数据库里面的数据
         :params where_cols 过滤的列
         :params where_vals 过滤列对应的值
         return 对应的delete语句
         """
-        delete_sql = self.delete_sql(table_name, self.db_name, where_cols, where_vals)
+        delete_sql = self.delete_sql(table_name, self.db_name, where_cols, where_vals, where_signs)
         if show_sql:
             print(f"删除表：{table_name}的sql为:{delete_sql}")
         with self.connection.cursor() as c:
@@ -307,12 +317,12 @@ class DB(SQLOperation):
         print(f"删除表：{table_name}对应的数据成功where_cols：{where_cols} where_vals：{where_vals}")
         return True
 
-    def update(self, table_name, update_dict, where_cols=[], where_vals=[], show_sql=False):
+    def update(self, table_name, update_dict, where_cols=None, where_vals=None, where_signs=None, show_sql=False):
         """
         修改数据库里面的数据
         """
         update_sql = self.single_update_sql(
-            update_dict, table_name, self.db_name, where_cols, where_vals)
+            update_dict, table_name, self.db_name, where_cols, where_vals, where_signs)
         if show_sql:
             print(f"修改表：{table_name}的sql为:{update_sql}")
         with self.connection.cursor() as c:
