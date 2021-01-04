@@ -54,11 +54,15 @@ db.cols("test")
 ## 查询语句
 
 ```python
-select(self, table_name, select_cols, where_cols=None, where_vals=None, order_dict=None, limit=None, show_sql=False)
+select(self, table_name, select_cols, where_cols=None, where_vals=None, where_signs=None,
+order_dict=None, limit=None, show_sql=False)
 # 说明
-select(表名, 需要查询的列名, 过滤的列名, 过滤的列名对应的值, 排序的字典, limit限制数量，是否打印生成的SQL)
+select(表名, 需要查询的列名, 过滤的列名, 过滤的列名对应的值, 过滤的符号, 排序的字典, limit限制数量，是否打印生成的SQL)
 # 返回值
 字段列表，查询到的二维列表，前面二者合起来的字典列表 = db.select(表名, 需要查询的列名)
+# 注意-select和delete以及update同下面说明
+where_cols 和 where_vals 和 where_signs 需要搭配使用
+where_signs 不写 默认都是 "="
 ```
 
 具体使用：
@@ -66,18 +70,20 @@ select(表名, 需要查询的列名, 过滤的列名, 过滤的列名对应的�
 ```python
 # 简单的查询
 cols, vals, datas = db.select("test", db.cols("test"))
+# 当然还可以直接这样
+datas = db.select("test", db.cols("test"))[2]
 # 查询test表里面ID为100的数据
-ID = 100
-cols, vals, datas = db.select("test", db.cols("test"), ["ID"], [ID])
+cols, vals, datas = db.select("test", db.cols("test"), ["ID"], [100])
 # 查询test表里面ID为100，并且Name为“wrallen”的数据
-Name = "wrallen"
-cols, vals, datas = db.select("test", db.cols("test"), ["ID", "Name"], [ID, Name])
+cols, vals, datas = db.select("test", db.cols("test"), ["ID", "Name"], [100, "wrallen"])
 # 按照更新时间递减，添加时间递增
 order_dict = {
     "DateTime": "DESC",
     "AddTime": "ASC"
 }
-cols, vals, datas = db.select("test", db.cols("test"), ["ID", "Name"], [ID, Name], order_dict)
+cols, vals, datas = db.select("test", db.cols("test"), ["ID", "Name"], [100, "wrallen"], order_dict)
+# 查询test表里面ID小于100的数据
+cols, vals, datas = db.select("test", db.cols("test"), ["ID"], [100], ["<"])
 # 查询test表里面的ID和Name的默认排序的前10条
 cols, vals, datas = db.select("test", ["ID", "Name"], limit=10)
 ```
@@ -104,9 +110,9 @@ new_id = db.insert("test", insert_sql)
 ## 删除语句
 
 ```python
-delete(self, table_name, where_cols=[], where_vals=[], show_sql=False)
+delete(self, table_name, where_cols=None, where_vals=None, where_signs=None, show_sql=False)
 # 说明
-delete(表名, 过滤的列名, 过滤的列名对应的值, 是否打印生成的SQL)
+delete(表名, 过滤的列名, 过滤的列名对应的值, 过滤的符号, 是否打印生成的SQL)
 # 返回值-True, 删除失败会报异常
 ```
 
@@ -115,14 +121,16 @@ delete(表名, 过滤的列名, 过滤的列名对应的值, 是否打印生成�
 ```python
 # 删除test表里面ID为1的数据
 db.delete("test", ["ID"], [1])
+# 删除test表里面ID小于等于1的数据
+db.delete("test", ["ID"], [1], ["<="])
 ```
 
 ## 更新语句
 
 ```python
-update(self, table_name, update_dict, where_cols=[], where_vals=[], show_sql=False)
+update(self, table_name, update_dict, where_cols=None, where_vals=None, where_signs=None, show_sql=False)
 # 说明
-update(表名, 更新的字典, 过滤的列名, 过滤的列名对应的值, 是否打印生成的SQL)
+update(表名, 更新的字典, 过滤的列名, 过滤的列名对应的值, 过滤的符号, 是否打印生成的SQL)
 # 返回值-True, 更新失败会报异常
 ```
 
