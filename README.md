@@ -16,6 +16,16 @@
 
 使用方法也非常简单，通过复制源码到项目，然后进行导包使用，或者是通过pip安装后import使用。
 
+导包的方法如下
+
+```shell
+>>> from db_mysql import DB
+>>> DB
+<class 'db_mysql.DB'>
+```
+
+
+
 PS：不断更新中，有错误欢迎指出
 
 # 具体使用方法

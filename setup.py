@@ -7,11 +7,11 @@ with io.open("README.md", "r", encoding="utf8") as f:
     readme = f.read()
 
 setup(
-    # 包的名称，pip install db-mysql, 和文件夹的名称要一样，不然安装和使用时会头疼
+    # 包的名称，pip install db-mysql,
     name='db-mysql',
-    version='0.1.0',
-    # 暂时和包名一样
-    py_modules=['db-mysql'],
+    version='0.1.1',
+    # 具体使用时用的，这里不能用-会报语法错误
+    py_modules=['db_mysql'],
     # 作者信息
     author="WRAllen",
     author_email="1072274105@qq.com",
