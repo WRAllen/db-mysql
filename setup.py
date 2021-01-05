@@ -23,5 +23,8 @@ setup(
     packages=find_packages("src"),
     package_dir={"": "src"},
     # github地址，Pypi页面上HomePage按钮的链接
-    url='https://github.com/WRAllen/db-mysql'
+    url='https://github.com/WRAllen/db-mysql',
+    install_requires=[
+        "PyMySQL>=0.10.1"
+    ]
 )
