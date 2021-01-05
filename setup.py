@@ -9,7 +9,7 @@ with io.open("README.md", "r", encoding="utf8") as f:
 setup(
     # 包的名称，pip install db-mysql,
     name='db-mysql',
-    version='0.1.1',
+    version='0.1.2',
     # 具体使用时用的，这里不能用-会报语法错误
     py_modules=['db_mysql'],
     # 作者信息
@@ -24,6 +24,7 @@ setup(
     package_dir={"": "src"},
     # github地址，Pypi页面上HomePage按钮的链接
     url='https://github.com/WRAllen/db-mysql',
+    # 依赖说明
     install_requires=[
         "PyMySQL>=0.10.1"
     ]
